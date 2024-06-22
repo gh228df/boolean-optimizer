@@ -3,7 +3,7 @@ A program for optimizing minterms.
 
 The main.cpp is the main algorithm which can be used to generate and optimize a function.
 
-The obool.cpp is an interactive version of main.cpp where you can input your minterms and get the optimized solution. The function consists from English latters, capital letters for a non-negated inputs and a lowercase letters for negated inputs.
+The obool.cpp is an interactive version of main.cpp where you can input your minterms and get the optimized solution. The function consists from English latters, capital letters for non-negated inputs and a lowercase letters for negated inputs. Minterms should be separated by '+' and to calculate the solution you should put '=' after the last minterm.
 <h3> Examples </h3>
 <h5> Input: AB + A = *enter*</h5>
 <h5> Output: A </h5>
