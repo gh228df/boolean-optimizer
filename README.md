@@ -1,6 +1,15 @@
 # boolean-optimizer
 A program for optimizing minterms.
 
+The main.cpp is the main algorithm which can be used to generate and optimize a function.
+
+The obool.cpp is an interactive version of main.cpp where you can input your minterms and get the optimized solution. The function consists from English latters, capital letters for a non-negated inputs and a lowercase letters for negated inputs.
+<h3> Examples </h3>
+<h5> Input: AB + A = *enter*</h5>
+<h5> Output: A </h5>
+<h5> Input: AB + a = *enter*</h5>
+<h5> Output: B + a </h5>
+
 # My Algorithm vs Logisim
 
 https://github.com/gh228df/boolean-optimizer/assets/144490574/58af0f20-090f-49a8-9e9d-7b318f1ed733
