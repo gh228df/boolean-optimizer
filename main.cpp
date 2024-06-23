@@ -9,6 +9,8 @@
 using namespace std;
 using namespace chrono;
 
+const bool checkfunction = true;
+
 const bool displayfunction = false;
 
 const bool displaymintermscount = true;
@@ -19,13 +21,13 @@ const unsigned int bits = 8;
 
 unsigned int* mulres = (unsigned int*)malloc((1 << (bits * 2)) * sizeof(unsigned int));
 
-void optimize(unsigned int newmask, unsigned int*& cureval, unsigned int*& isactive, bool &hit, const unsigned int &u, const unsigned int shiftconstantmain){
-	const int size = ((1 << (bits * 2)) >> __builtin_popcount(isactive[u]));
-	const int shiftconst = (cureval[u] & isactive[u]);
+void optimize(unsigned int newmask, unsigned int &cureval, unsigned int &isactive, bool &hit, const unsigned int shiftconstantmain){
+	const int size = ((1 << (bits * 2)) >> __builtin_popcount(isactive));
+	const int shiftconst = (cureval & isactive);
 	for(int h = 0; h < size; ++h){
 		int assembledindex = shiftconst, temph = h;
 		for(int j = 0; j < bits * 2; ++j){
-			if(isactive[u] & (1 << j))
+			if(isactive & (1 << j))
 				temph <<= 1;
 			else if(temph & (1 << j))
 				assembledindex |= (1 << j);
@@ -38,17 +40,17 @@ void optimize(unsigned int newmask, unsigned int*& cureval, unsigned int*& isact
 			}	
 		}
 		if(newmask == 0)
-			break;
+			return;
 	}
 	int t = __builtin_popcount(newmask);
 	if(t > 1){
 		hit = true;
-		isactive[u] ^= (1 << __builtin_ctz(newmask));
-		optimize(newmask ^ (1 << __builtin_ctz(newmask)), cureval, isactive, hit, u, shiftconstantmain);
+		isactive ^= (1 << __builtin_ctz(newmask));
+		optimize(newmask ^ (1 << __builtin_ctz(newmask)), cureval, isactive, hit, shiftconstantmain);
 	}
 	else if(t & 1){
 		hit = true;
-		isactive[u] ^= newmask;
+		isactive ^= newmask;
 	}
 }
 
@@ -165,9 +167,22 @@ int main()
 			}
 			if(hit == false){
 				for(unsigned int u = 0; u < toallocate; ++u)
-					optimize(isactive[u], cureval, isactive, hit, u, (1 << i));
+					optimize(isactive[u], cureval[u], isactive[u], hit, (1 << i));
 				if(hit == false)
 					break;
+				for (unsigned int u = 0; u < toallocate; ++u)
+				{
+					for (unsigned int j = u + 1; j < toallocate; ++j)
+					{
+						if(isactive[u] == isactive[j] and ((cureval[u] ^ cureval[j]) & isactive[u]) == 0){
+							deleteElement(isactive, toallocate, j);
+							deleteElement(cureval, toallocate, j);
+							--toallocate;
+							--j;
+						}
+					}
+				}
+				break;
 			}
 		}
 		unsigned int* tempevalarr = (unsigned int*)malloc((1 << (bits * 2)) * sizeof(unsigned int));
@@ -243,23 +258,25 @@ int main()
 					}
 			}
 		}
-		unsigned int* temparr = (unsigned int*)malloc((1 << (bits * 2)) * sizeof(unsigned int));
-		for(int u = 0; u < (1 << (bits * 2)); ++u)
-			temparr[u] = 0;
-		for(unsigned int j = 0; j < toallocate; ++j)
+		if(checkfunction){
+			unsigned int* temparr = (unsigned int*)malloc((1 << (bits * 2)) * sizeof(unsigned int));
+			for(int u = 0; u < (1 << (bits * 2)); ++u)
+				temparr[u] = 0;
+			for(unsigned int j = 0; j < toallocate; ++j)
+				for(unsigned int u = 0; u < (1 << (bits * 2)); ++u)
+					if(((u ^ cureval[j]) & isactive[j]) == 0)
+						temparr[u] |= (1 << i);
+			for(int u = 0; u < (1 << (bits * 2)); ++u)
+				mulres[u] ^= temparr[u];
 			for(unsigned int u = 0; u < (1 << (bits * 2)); ++u)
-				if(((u ^ cureval[j]) & isactive[j]) == 0)
-					temparr[u] |= (1 << i);
-		for(int u = 0; u < (1 << (bits * 2)); ++u)
-			mulres[u] ^= temparr[u];
-        for(unsigned int u = 0; u < (1 << (bits * 2)); ++u)
-			if(mulres[u] & (1 << i)){
-				cout << "Error" << endl;
-			}
+				if(mulres[u] & (1 << i)){
+					cout << "Error" << endl;
+				}
+			delete temparr;
+		}
 		cout << endl;
 		delete cureval;
 		delete isactive;
-		delete temparr;
 	}
 	auto stop = high_resolution_clock::now();
 	auto duration1 = duration_cast<milliseconds>(stop - start);
